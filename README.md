@@ -39,6 +39,3 @@ src/
 └── utils/        # Utility functions
 ```
 
-## 🔗 Live Repository
-
-[https://github.com/sakthivel-s14/ConnectPro](https://github.com/sakthivel-s14/ConnectPro)
