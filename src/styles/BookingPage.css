@@ -1039,3 +1039,328 @@
     font-size: 1.55rem;
   }
 }
+
+/* ============================================================
+   BOOKED SLOT STYLING
+   ============================================================ */
+.time-slot.booked-slot {
+  background: #f1f5f9 !important;
+  border-color: #e2e8f0 !important;
+  color: #94a3b8 !important;
+  cursor: not-allowed !important;
+  opacity: 0.65;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.booked-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  color: #ef4444;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1;
+}
+
+.total-row {
+  border-top: 2px solid #e2e8f0;
+  padding-top: 10px;
+  margin-top: 4px;
+  font-size: 1rem;
+}
+
+/* ============================================================
+   PAYMENT MODAL OVERLAY
+   ============================================================ */
+.pay-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: payFadeIn 0.2s ease;
+}
+
+@keyframes payFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.pay-modal {
+  background: #fff;
+  border-radius: 24px;
+  width: 100%;
+  max-width: 460px;
+  max-height: 92vh;
+  overflow-y: auto;
+  box-shadow: 0 32px 80px rgba(15, 23, 42, 0.3);
+  animation: paySlideUp 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: flex;
+  flex-direction: column;
+}
+
+@keyframes paySlideUp {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+/* MODAL HEADER */
+.pay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px;
+  border-bottom: 1.5px solid #f1f5f9;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-radius: 24px 24px 0 0;
+  z-index: 2;
+}
+
+.pay-header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #5b6ef8;
+}
+
+.pay-header-left svg { flex-shrink: 0; }
+
+.pay-header-left h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.pay-header-left p {
+  font-size: 0.72rem;
+  color: #10b981;
+  font-weight: 600;
+  margin: 0;
+}
+
+.pay-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: #f1f5f9;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.pay-close:hover { background: #fee2e2; color: #ef4444; }
+
+/* ORDER SUMMARY STRIP */
+.pay-summary {
+  background: linear-gradient(135deg, #f0f4ff, #ede9fe);
+  padding: 14px 24px;
+  border-bottom: 1.5px solid #e0e7ff;
+}
+
+.pay-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pay-summary-row:last-child { font-size: 0.75rem; font-weight: 500; color: #64748b; margin-top: 2px; }
+.pay-summary-meta { color: #64748b; }
+
+/* PAYMENT METHOD TABS */
+.pay-methods {
+  display: flex;
+  gap: 6px;
+  padding: 16px 24px 0;
+  flex-wrap: wrap;
+}
+
+.pay-method-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  color: #475569;
+}
+
+.pay-method-tab:hover { border-color: #5b6ef8; color: #5b6ef8; }
+.pay-method-tab.active {
+  background: linear-gradient(135deg, #5b6ef8, #7c3aed);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(91,110,248,0.3);
+}
+
+/* FORM AREA */
+.pay-form {
+  padding: 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pay-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #374151;
+  letter-spacing: 0.01em;
+  margin-bottom: 3px;
+  display: block;
+}
+
+.pay-input {
+  width: 100%;
+  padding: 11px 14px;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  color: #0f172a;
+  background: #f8fafc;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.pay-input:focus { border-color: #5b6ef8; background: #fff; box-shadow: 0 0 0 4px rgba(91,110,248,0.1); }
+.pay-input::placeholder { color: #94a3b8; }
+
+.pay-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* UPI APPS */
+.upi-apps {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.upi-app-chip {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #475569;
+}
+
+/* BANK GRID */
+.bank-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.bank-chip {
+  padding: 10px 8px;
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #475569;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+.bank-chip:hover { border-color: #5b6ef8; color: #5b6ef8; background: #f0f4ff; }
+
+/* HINT */
+.pay-hint {
+  font-size: 0.75rem;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* ERROR */
+.pay-error {
+  margin: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 13px;
+  background: #fff1f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 9px;
+  color: #b91c1c;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* PAY BUTTON */
+.pay-btn {
+  margin: 12px 24px;
+  padding: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #5b6ef8, #7c3aed);
+  border: none;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  box-shadow: 0 8px 24px rgba(91,110,248,0.4);
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+.pay-btn:hover:not(:disabled) {
+  box-shadow: 0 12px 32px rgba(91,110,248,0.55);
+  transform: translateY(-2px);
+}
+.pay-btn:disabled { opacity: 0.7; cursor: not-allowed; transform: none; }
+
+/* SPINNER inside pay button */
+.pay-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid rgba(255,255,255,0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: paySpin 0.7s linear infinite;
+}
+@keyframes paySpin { to { transform: rotate(360deg); } }
+
+/* SECURE NOTE */
+.pay-secure-note {
+  text-align: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  padding: 0 24px 18px;
+  font-weight: 500;
+}
+
+@media (max-width: 500px) {
+  .pay-modal { border-radius: 20px 20px 0 0; max-height: 96vh; }
+  .bank-grid  { grid-template-columns: repeat(2, 1fr); }
+  .pay-methods { gap: 4px; }
+  .pay-method-tab { padding: 7px 10px; font-size: 0.75rem; }
+}

@@ -1,177 +1,95 @@
 import React, { useState, useRef, useEffect } from "react";
-import { FiCheckCircle, FiLoader } from "react-icons/fi";
+import { FiCheckCircle } from "react-icons/fi";
 import "../styles/LoginPage.css";
 import { getStoredUsers, getStoredProviders, setAuth, saveStoredUsers } from "../utils/storage";
 import { Link, useNavigate } from "react-router-dom";
 import { googleSignIn, GOOGLE_CLIENT_ID } from "../utils/googleAuth";
 
 export default function LoginPage() {
-
   const navigate = useNavigate();
 
-  const [email,        setEmail]        = useState("");
-  const [password,     setPassword]     = useState("");
+  const [email,         setEmail]         = useState("");
+  const [password,      setPassword]      = useState("");
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError,   setGoogleError]   = useState("");
   const googleBtnRef = useRef(null);
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  // ── Render the official Google button as a fallback visual ──
-  useEffect(() => {
-    if (!googleBtnRef.current) return;
-    if (GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") return;
-    if (!window.google?.accounts?.id) return;
-
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredential,
-      auto_select: false,
-    });
-
-    window.google.accounts.id.renderButton(googleBtnRef.current, {
-      theme:  "outline",
-      size:   "large",
-      width:  "100%",
-      text:   "continue_with",
-      shape:  "rectangular",
-    });
-  }, []);
-
-  // ── Called when Google returns a credential (One-Tap or button) ──
-  const handleGoogleCredential = async (response) => {
-    setGoogleLoading(true);
-    setGoogleError("");
+  // ── Decode Google JWT and return user info ──
+  const decodeJwt = (credential) => {
     try {
-      // Decode the JWT to get user info
-      const base64Url = response.credential.split(".")[1];
-      const base64    = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      const payload   = JSON.parse(
-        decodeURIComponent(
-          atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
-        )
-      );
-
-      const googleUser = {
-        name:    payload.name    || payload.email.split("@")[0],
-        email:   payload.email,
-        picture: payload.picture || null,
-      };
-
-      loginWithGoogleUser(googleUser);
-    } catch (e) {
-      setGoogleError("Failed to process Google sign-in. Please try again.");
-    } finally {
-      setGoogleLoading(false);
-    }
+      const base64 = credential.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      return JSON.parse(decodeURIComponent(atob(base64).split("").map(c =>
+        "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")));
+    } catch { return null; }
   };
 
-  // ── Core: given Google user info, find or create account ──
-  const loginWithGoogleUser = (googleUser) => {
-    const { name, email: gEmail, picture } = googleUser;
-
-    // Check if existing provider
-    const providers = getStoredProviders();
+  // ── Given Google user info → find or create account ──
+  const loginWithGoogleUser = ({ name, email: gEmail, picture }) => {
+    // Provider?
+    const providers    = getStoredProviders();
     const foundProvider = providers.find(p => p.email.toLowerCase() === gEmail.toLowerCase());
     if (foundProvider) {
       setAuth({ role: "provider", email: foundProvider.email, picture });
-      navigate("/provider-home");
-      return;
+      navigate("/provider-home"); return;
     }
-
-    // Check if pending/rejected application
-    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
-    const pendingApp   = applications.find(a => a.email.toLowerCase() === gEmail.toLowerCase());
-    if (pendingApp?.status === "pending") {
-      setGoogleError("⏳ Your provider application is still under review. Please wait for admin approval.");
-      return;
-    }
-    if (pendingApp?.status === "rejected") {
-      setGoogleError("❌ Your provider application was not approved. Please contact support.");
-      return;
-    }
-
-    // Check if existing user
-    const users = getStoredUsers();
+    // Pending application?
+    const apps = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
+    const app  = apps.find(a => a.email.toLowerCase() === gEmail.toLowerCase());
+    if (app?.status === "pending")  { alert("⏳ Your provider application is under review. Please wait for admin approval."); return; }
+    if (app?.status === "rejected") { alert("❌ Your provider application was not approved. Please contact support."); return; }
+    // Existing user?
+    const users     = getStoredUsers();
     const foundUser = users.find(u => u.email.toLowerCase() === gEmail.toLowerCase());
     if (foundUser) {
       setAuth({ role: "user", email: foundUser.email, picture });
-      navigate("/user-home");
-      return;
+      navigate("/user-home"); return;
     }
-
-    // New user — auto-register via Google
-    const newUser = {
-      name,
-      email:     gEmail,
-      password:  "", // no password for Google users
-      role:      "user",
-      picture,
-      googleAuth: true,
-      createdAt:  new Date().toISOString(),
-    };
+    // New user — auto-register
+    const newUser = { name, email: gEmail, password: "", role: "user", picture, googleAuth: true, createdAt: new Date().toISOString() };
     saveStoredUsers([...users, newUser]);
     setAuth({ role: "user", email: gEmail, picture });
     navigate("/user-home");
   };
 
-  // ── Click handler for our custom Google button ──
+  // ── Google button click ──
   const handleGoogleClick = async () => {
-    setGoogleError("");
-
     if (GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") {
-      setGoogleError(
-        "🔧 Google Sign-In needs setup. Add your Client ID to the .env file.\n" +
-        "See SETUP GUIDE below."
-      );
+      alert("Google Sign-In is not configured yet.\n\nTo enable it:\n1. Get a Client ID from console.cloud.google.com\n2. Create .env file with VITE_GOOGLE_CLIENT_ID=your_id\n3. Restart the dev server");
       return;
     }
-
     setGoogleLoading(true);
     try {
       const googleUser = await googleSignIn();
       loginWithGoogleUser(googleUser);
     } catch (err) {
-      if (err.message === "SETUP_REQUIRED") {
-        setGoogleError("🔧 Google Client ID not configured. See the setup guide below.");
-      } else {
-        setGoogleError(err.message || "Google sign-in failed. Please try again.");
-      }
+      alert(err.message || "Google sign-in failed. Please try again.");
     } finally {
       setGoogleLoading(false);
     }
   };
 
-  // ── Regular email/password login ──
+  // ── Email/password login ──
   const handleLogin = () => {
     if (!email || !password) { alert("Please enter email and password"); return; }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) { alert("Please enter a valid email address"); return; }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert("Please enter a valid email address"); return; }
 
     // Admin
     if (email.toLowerCase() === "admin@connectpro.com" && password === "admin123") {
       setAuth({ role: "admin", email: "admin@connectpro.com" });
       navigate("/admin"); return;
     }
-
     // Pending applications
-    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
-    const pendingApp   = applications.find(a => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
-    if (pendingApp?.status === "pending") {
-      alert("⏳ Your provider application is under review.\n\nOur admin team will verify your documents within 24–48 hours.\nYou'll be able to log in once approved.");
-      return;
-    }
-    if (pendingApp?.status === "rejected") {
-      alert("❌ Your provider application was not approved.\n\n" + (pendingApp.rejectionReason ? `Reason: ${pendingApp.rejectionReason}\n\n` : "") + "Please contact support or reapply.");
-      return;
-    }
+    const apps  = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
+    const app   = apps.find(a => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
+    if (app?.status === "pending")  { alert("⏳ Your provider application is under review."); return; }
+    if (app?.status === "rejected") { alert("❌ Your provider application was not approved.\n" + (app.rejectionReason ? `Reason: ${app.rejectionReason}` : "")); return; }
 
-    const savedUsers     = getStoredUsers();
-    const savedProviders = getStoredProviders();
-    const foundUser      = savedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
-    const foundProvider  = savedProviders.find(p => p.email.toLowerCase() === email.toLowerCase());
+    const users     = getStoredUsers();
+    const providers = getStoredProviders();
+    const foundUser     = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const foundProvider = providers.find(p => p.email.toLowerCase() === email.toLowerCase());
 
     if (foundUser && password === foundUser.password) {
       setAuth({ role: "user", email: foundUser.email });
@@ -181,11 +99,8 @@ export default function LoginPage() {
       setAuth({ role: "provider", email: foundProvider.email });
       navigate("/provider-home"); return;
     }
-
     alert("Invalid email or password. Please check your credentials or create a new account.");
   };
-
-  const setupRequired = GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE";
 
   return (
     <div className="login-page">
@@ -193,23 +108,17 @@ export default function LoginPage() {
       {/* ===== LEFT SIDE ===== */}
       <div className="login-left">
         <Link to="/" className="top-back-btn">← Back</Link>
-
         <div className="left-container">
           <div className="welcome-tag">{greeting}</div>
           <h1>Welcome Back</h1>
           <h3>Continue Your Learning Journey</h3>
-          <p>
-            Connect with mentors, attend live mentorship sessions,
-            prepare for interviews, and accelerate your professional growth.
-          </p>
-
+          <p>Connect with mentors, attend live mentorship sessions, prepare for interviews, and accelerate your professional growth.</p>
           <div className="feature-list">
             <div className="feature-item"><FiCheckCircle size={20} /><p>1:1 Mentorship Sessions</p></div>
             <div className="feature-item"><FiCheckCircle size={20} /><p>Mock Interview Preparation</p></div>
             <div className="feature-item"><FiCheckCircle size={20} /><p>Career Guidance &amp; Support</p></div>
             <div className="feature-item"><FiCheckCircle size={20} /><p>Trusted by 10,000+ Learners</p></div>
           </div>
-
           <div className="tags">
             <span>Career</span><span>Interview</span><span>Resume</span><span>Mentorship</span>
           </div>
@@ -223,7 +132,33 @@ export default function LoginPage() {
           <h2>Sign In</h2>
           <p className="subtitle">Continue your mentorship journey with us.</p>
 
-          {/* GOOGLE SIGN-IN */}
+          {/* EMAIL */}
+          <div className="input-group">
+            <label>Email Address</label>
+            <input type="email" placeholder="Enter your email" value={email}
+              onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+          </div>
+
+          {/* PASSWORD */}
+          <div className="input-group">
+            <label>Password</label>
+            <input type="password" placeholder="Enter your password" value={password}
+              onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} />
+          </div>
+
+          {/* OPTIONS */}
+          <div className="options">
+            <label className="remember"><input type="checkbox" /><span>Remember me</span></label>
+            <a href="/" className="forgot-link">Forgot Password?</a>
+          </div>
+
+          {/* SIGN IN BUTTON */}
+          <button className="signin-btn" onClick={handleLogin}>Sign In</button>
+
+          {/* DIVIDER */}
+          <div className="divider"><span>OR</span></div>
+
+          {/* GOOGLE SIGN-IN — below Sign In button */}
           <button
             className={`google-btn ${googleLoading ? "google-btn-loading" : ""}`}
             onClick={handleGoogleClick}
@@ -231,10 +166,7 @@ export default function LoginPage() {
             id="google-signin-btn"
           >
             {googleLoading ? (
-              <>
-                <span className="google-spinner" />
-                Signing in with Google...
-              </>
+              <><span className="google-spinner" /> Signing in with Google...</>
             ) : (
               <>
                 <svg width="20" height="20" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
@@ -248,74 +180,9 @@ export default function LoginPage() {
             )}
           </button>
 
-          {/* Google error / setup notice */}
-          {googleError && (
-            <div className="google-error-box">
-              <span>{googleError}</span>
-            </div>
-          )}
-
-          {/* Show setup guide if client ID not configured */}
-          {setupRequired && (
-            <div className="google-setup-guide">
-              <p className="setup-title">🔧 Quick Setup — Google Sign-In</p>
-              <ol>
-                <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer">console.cloud.google.com</a></li>
-                <li>Create a project → <strong>APIs & Services → Credentials</strong></li>
-                <li>Click <strong>Create Credentials → OAuth 2.0 Client ID</strong></li>
-                <li>Type: <strong>Web application</strong></li>
-                <li>Authorised origin: <code>http://localhost:5173</code></li>
-                <li>Copy the <strong>Client ID</strong></li>
-                <li>Create <code>.env</code> in <code>my-react-app/</code> and add:<br />
-                  <code>VITE_GOOGLE_CLIENT_ID=your_client_id_here</code>
-                </li>
-                <li>Restart the dev server: <code>npm run dev</code></li>
-              </ol>
-            </div>
-          )}
-
-          {/* DIVIDER */}
-          <div className="divider"><span>OR sign in with email</span></div>
-
-          {/* EMAIL */}
-          <div className="input-group">
-            <label>Email Address</label>
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-            />
-          </div>
-
-          {/* PASSWORD */}
-          <div className="input-group">
-            <label>Password</label>
-            <input
-              type="password"
-              placeholder="Enter your password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-            />
-          </div>
-
-          {/* OPTIONS */}
-          <div className="options">
-            <label className="remember">
-              <input type="checkbox" /><span>Remember me</span>
-            </label>
-            <a href="/" className="forgot-link">Forgot Password?</a>
-          </div>
-
-          {/* SIGN IN BUTTON */}
-          <button className="signin-btn" onClick={handleLogin}>Sign In</button>
-
           {/* BOTTOM */}
           <p className="bottom-text">
-            Don't have an account?{" "}
-            <Link to="/register">Create Account</Link>
+            Don't have an account?{" "}<Link to="/register">Create Account</Link>
           </p>
 
         </div>
