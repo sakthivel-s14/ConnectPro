@@ -22,6 +22,7 @@ import MeetingRoom from "./pages/MeetingRoom";
 import MessagesPage from "./pages/MessagesPage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import LeaveReviewPage from "./pages/LeaveReviewPage";
 
 import ProtectedRoute from "./Components/ProtectedRoute";
 import Loader from "./Components/Loader";
@@ -205,6 +206,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["user", "provider", "admin"]}>
               <ProviderProfileView />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/leave-review"
+          element={
+            <ProtectedRoute allowedRoles={["user"]}>
+              <LeaveReviewPage />
             </ProtectedRoute>
           }
         />

@@ -177,10 +177,22 @@ export default function SessionsPage() {
                       </>
                     ) : (
                       <>
-                        <button className="review-btn">
-                          <FiCheck size={16} /> Leave Review
-                        </button>
-                        <button className="rebook-btn">
+                        {booking.reviewed ? (
+                          <span className="reviewed-badge">
+                            <FiCheck size={14} /> Reviewed
+                          </span>
+                        ) : auth?.role === "user" ? (
+                          <button
+                            className="review-btn"
+                            onClick={() => navigate("/leave-review", { state: { booking, returnTo: "/sessions" } })}
+                          >
+                            <FiCheck size={16} /> Leave Review
+                          </button>
+                        ) : null}
+                        <button
+                          className="rebook-btn"
+                          onClick={() => navigate(`/provider-profile/${encodeURIComponent(booking.providerEmail)}`)}
+                        >
                           <FiVideo size={16} /> Book Again
                         </button>
                       </>

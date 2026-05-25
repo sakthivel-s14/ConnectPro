@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/AdminDashboard.css";
-import { FiUsers, FiShield, FiDollarSign, FiTrendingUp, FiCheckCircle, FiTrash2, FiEye, FiMail, FiMessageSquare, FiSearch, FiX, FiFileText, FiThumbsUp, FiThumbsDown, FiClock, FiAlertCircle, FiExternalLink } from "react-icons/fi";
+import { FiUsers, FiShield, FiDollarSign, FiTrendingUp, FiCheckCircle, FiTrash2, FiEye, FiMail, FiMessageSquare, FiSearch, FiX, FiFileText, FiThumbsUp, FiThumbsDown, FiClock, FiAlertCircle, FiExternalLink, FiStar } from "react-icons/fi";
 import { getStoredUsers, getStoredProviders, saveStoredProviders } from "../utils/storage";
 
 export default function AdminDashboard() {
@@ -19,6 +19,9 @@ export default function AdminDashboard() {
   );
   const [applications,   setApplications]   = useState(() =>
     JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]")
+  );
+  const [reviews,        setReviews]        = useState(() =>
+    JSON.parse(localStorage.getItem("connectpro_reviews") || "[]")
   );
   const [rejectTarget,   setRejectTarget]   = useState(null);
   const [rejectReason,   setRejectReason]   = useState("");
@@ -172,6 +175,9 @@ export default function AdminDashboard() {
         <button className={`tab msg-tab ${selectedTab === "applications" ? "active" : ""}`} onClick={() => setSelectedTab("applications")}>
           <FiFileText size={13} style={{ marginRight: 5 }} />Applications
           {pendingCount > 0 && <span className="msg-unread-badge" style={{ background: "#a78bfa" }}>{pendingCount}</span>}
+        </button>
+        <button className={`tab msg-tab ${selectedTab === "reviews" ? "active" : ""}`} onClick={() => setSelectedTab("reviews")}>
+          <FiStar size={13} style={{ marginRight: 5 }} />Reviews ({reviews.length})
         </button>
       </div>
 
@@ -510,6 +516,87 @@ export default function AdminDashboard() {
                           </button>
                         </div>
                       )
+                    )}
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      )}
+      {/* ═══════════════ REVIEWS TAB ═══════════════ */}
+      {selectedTab === "reviews" && (
+        <div className="admin-messages-section">
+          <div className="section-header">
+            <h2>
+              <FiStar size={18} style={{ marginRight: 8, verticalAlign: "middle", color: "#fbbf24" }} />
+              All Reviews ({reviews.length} total)
+            </h2>
+          </div>
+
+          {reviews.length === 0 ? (
+            <div className="msg-empty">
+              <FiStar size={52} style={{ color: "#fbbf24" }} />
+              <h3>No reviews yet</h3>
+              <p>Reviews from users after completed sessions will appear here.</p>
+            </div>
+          ) : (
+            <div className="app-list">
+              {[...reviews]
+                .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt))
+                .map(rv => (
+                  <div key={rv.id} className="app-card" style={{ borderColor: "rgba(251,191,36,0.2)", background: "rgba(251,191,36,0.02)" }}>
+                    <div className="app-stripe" style={{ background: "linear-gradient(180deg,#fbbf24,#f59e0b)" }} />
+
+                    <div className="app-card-header">
+                      <div className="app-avatar" style={{ background: "linear-gradient(135deg,#fbbf24,#f59e0b)", boxShadow: "0 4px 12px rgba(251,191,36,0.3)" }}>
+                        {(rv.userName?.[0] || "U").toUpperCase()}
+                      </div>
+                      <div className="app-header-info">
+                        <div className="app-name-row">
+                          <p className="app-name">{rv.userName}</p>
+                          <span style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                            {[1,2,3,4,5].map(s => (
+                              <FiStar key={s} size={14} style={{ color: rv.rating >= s ? "#fbbf24" : "#334155", fill: rv.rating >= s ? "#fbbf24" : "none" }} />
+                            ))}
+                            <span style={{ fontSize: "0.78rem", color: "#fbbf24", fontWeight: 700, marginLeft: 4 }}>{rv.rating}.0</span>
+                          </span>
+                        </div>
+                        <p className="app-email">For: <strong style={{ color: "#a5b4fc" }}>{rv.providerName}</strong></p>
+                        <p className="app-time">{formatTime(rv.submittedAt)} · Session on {rv.sessionDate || "N/A"}</p>
+                      </div>
+                      <button className="msg-btn msg-btn-delete" style={{ marginLeft: "auto", flexShrink: 0 }}
+                        onClick={() => {
+                          if (window.confirm("Delete this review?")) {
+                            const updated = reviews.filter(r => r.id !== rv.id);
+                            setReviews(updated);
+                            localStorage.setItem("connectpro_reviews", JSON.stringify(updated));
+                          }
+                        }}>
+                        <FiTrash2 size={13} />
+                      </button>
+                    </div>
+
+                    <div>
+                      <p style={{ fontSize: "0.95rem", fontWeight: 800, color: "#f1f5f9", marginBottom: 6 }}>"{rv.title}"</p>
+                      <p style={{ fontSize: "0.85rem", color: "#94a3b8", lineHeight: 1.6 }}>{rv.review}</p>
+                    </div>
+
+                    {rv.tags?.length > 0 && (
+                      <div className="app-docs-row">
+                        {rv.tags.map(tag => (
+                          <span key={tag} style={{ padding: "5px 12px", borderRadius: "999px", background: "rgba(251,191,36,0.08)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.2)", fontSize: "0.76rem", fontWeight: 700 }}>
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {rv.recommend !== null && rv.recommend !== undefined && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.8rem", fontWeight: 700 }}>
+                        {rv.recommend
+                          ? <><FiThumbsUp size={13} style={{ color: "#34d399" }} /><span style={{ color: "#34d399" }}>Recommends this mentor</span></>
+                          : <><FiThumbsDown size={13} style={{ color: "#f87171" }} /><span style={{ color: "#f87171" }}>Does not recommend</span></>}
+                      </div>
                     )}
                   </div>
                 ))}

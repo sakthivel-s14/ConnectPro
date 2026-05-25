@@ -221,10 +221,18 @@ export default function ProviderHome() {
               <p>Upcoming</p>
             </div>
           </div>
-          <div className="stat-strip-card purple">
+          <div className="stat-strip-card purple" onClick={() => navigate("/reviews")}>
             <div className="stat-strip-icon"><FiStar size={20} /></div>
             <div>
-              <h2>4.9</h2>
+              <h2>
+                {(() => {
+                  const allReviews = JSON.parse(localStorage.getItem("connectpro_reviews") || "[]");
+                  const myReviews = allReviews.filter(r => r.providerEmail === provider?.email);
+                  if (myReviews.length === 0) return "—";
+                  const avg = myReviews.reduce((s, r) => s + r.rating, 0) / myReviews.length;
+                  return avg.toFixed(1);
+                })()}
+              </h2>
               <p>Avg Rating</p>
             </div>
           </div>
@@ -434,6 +442,80 @@ export default function ProviderHome() {
           </div>
 
         </div>
+
+        {/* REVIEWS SECTION */}
+        {(() => {
+          const allReviews = JSON.parse(localStorage.getItem("connectpro_reviews") || "[]");
+          const myReviews = allReviews.filter(r => r.providerEmail === provider?.email)
+            .sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+          const avgRating = myReviews.length
+            ? (myReviews.reduce((s, r) => s + r.rating, 0) / myReviews.length).toFixed(1)
+            : null;
+
+          return (
+            <div className="provider-card" style={{ marginTop: 24 }}>
+              <div className="pcard-header">
+                <h3 style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <FiStar size={15} style={{ color: "#f59e0b" }} /> My Reviews
+                  {avgRating && (
+                    <span style={{ marginLeft: 8, fontSize: "0.78rem", background: "rgba(251,191,36,0.12)", color: "#f59e0b", padding: "2px 10px", borderRadius: "999px", fontWeight: 800, border: "1px solid rgba(251,191,36,0.25)" }}>
+                      ★ {avgRating} · {myReviews.length} review{myReviews.length !== 1 ? "s" : ""}
+                    </span>
+                  )}
+                </h3>
+              </div>
+
+              {myReviews.length === 0 ? (
+                <div className="empty-card-state">
+                  <FiStar size={32} style={{ color: "#f59e0b" }} />
+                  <p>No reviews yet</p>
+                  <span>Reviews from your sessions will appear here</span>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 14, padding: "4px 0" }}>
+                  {myReviews.slice(0, 3).map(rv => (
+                    <div key={rv.id} style={{ background: "#f8fafc", borderRadius: 14, padding: "14px 16px", border: "1.5px solid #f1f5f9" }}>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#5b6ef8,#7c3aed)", display: "grid", placeItems: "center", color: "#fff", fontWeight: 900, fontSize: "0.85rem" }}>
+                            {rv.userName?.[0]?.toUpperCase() || "U"}
+                          </div>
+                          <div>
+                            <p style={{ fontWeight: 700, fontSize: "0.85rem", color: "#0f172a", margin: 0 }}>{rv.userName}</p>
+                            <p style={{ fontSize: "0.72rem", color: "#94a3b8", margin: 0 }}>{rv.sessionDate || "Session"}</p>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: 2 }}>
+                          {[1,2,3,4,5].map(s => (
+                            <span key={s} style={{ fontSize: "0.85rem", color: rv.rating >= s ? "#f59e0b" : "#e2e8f0" }}>★</span>
+                          ))}
+                        </div>
+                      </div>
+                      <p style={{ fontWeight: 700, fontSize: "0.88rem", color: "#1e293b", marginBottom: 4 }}>"{rv.title}"</p>
+                      <p style={{ fontSize: "0.82rem", color: "#64748b", lineHeight: 1.5, marginBottom: rv.tags?.length ? 8 : 0 }}>
+                        {rv.review.length > 120 ? rv.review.substring(0, 120) + "…" : rv.review}
+                      </p>
+                      {rv.tags?.length > 0 && (
+                        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                          {rv.tags.slice(0, 3).map(tag => (
+                            <span key={tag} style={{ padding: "2px 9px", borderRadius: "999px", background: "rgba(91,110,248,0.07)", color: "#5b6ef8", fontSize: "0.7rem", fontWeight: 700, border: "1px solid rgba(91,110,248,0.15)" }}>
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {myReviews.length > 3 && (
+                    <p style={{ fontSize: "0.82rem", color: "#5b6ef8", fontWeight: 700, textAlign: "center", cursor: "pointer", padding: "4px 0" }}>
+                      View all {myReviews.length} reviews →
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
       </div>
     </div>

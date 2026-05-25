@@ -1,0 +1,397 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ============================================================
+   PAGE SHELL
+   ============================================================ */
+.rv-page {
+  min-height: 100vh;
+  background: linear-gradient(160deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 32px 20px 64px;
+}
+
+.rv-container {
+  width: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ============================================================
+   BACK BUTTON
+   ============================================================ */
+.rv-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  color: #94a3b8;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: fit-content;
+}
+.rv-back-btn:hover { background: rgba(255,255,255,0.12); color: #e2e8f0; }
+
+/* ============================================================
+   SESSION SUMMARY STRIP
+   ============================================================ */
+.rv-session-summary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  border-radius: 18px;
+  padding: 18px 22px;
+  backdrop-filter: blur(10px);
+}
+
+.rv-session-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #5b6ef8, #7c3aed);
+  display: grid;
+  place-items: center;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 6px 18px rgba(91,110,248,0.35);
+}
+
+.rv-session-info h3 {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin-bottom: 2px;
+}
+
+.rv-session-meta {
+  font-size: 0.78rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.rv-session-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.rv-session-chips span {
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(91,110,248,0.1);
+  border: 1px solid rgba(91,110,248,0.18);
+  color: #a5b4fc;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+/* ============================================================
+   MAIN FORM CARD
+   ============================================================ */
+.rv-form-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.09);
+  border-radius: 24px;
+  padding: 32px 32px 36px;
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.rv-form-header {
+  margin-bottom: 28px;
+}
+
+.rv-form-header h1 {
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  background: linear-gradient(135deg, #c7d2fe, #a5b4fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 6px;
+}
+
+.rv-form-header p {
+  font-size: 0.87rem;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+/* ============================================================
+   SECTIONS
+   ============================================================ */
+.rv-section {
+  margin-bottom: 24px;
+}
+
+.rv-label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.rv-required { color: #f87171; margin-left: 3px; }
+.rv-optional { color: #475569; font-size: 0.75rem; text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* ============================================================
+   STAR RATING
+   ============================================================ */
+.rv-stars {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rv-star {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #334155;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  border-radius: 8px;
+}
+.rv-star:hover { transform: scale(1.15); }
+.rv-star.filled { color: #fbbf24; filter: drop-shadow(0 0 8px rgba(251,191,36,0.6)); }
+.rv-star:disabled { cursor: default; }
+
+.rv-rating-label {
+  margin-left: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #fbbf24;
+  min-width: 80px;
+}
+
+/* ============================================================
+   RECOMMEND BUTTONS
+   ============================================================ */
+.rv-recommend-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.rv-recommend-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 22px;
+  border-radius: 13px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.1);
+  color: #64748b;
+}
+.rv-recommend-btn:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
+.rv-recommend-btn.yes-active {
+  background: rgba(16,185,129,0.12);
+  border-color: rgba(16,185,129,0.35);
+  color: #34d399;
+  box-shadow: 0 0 0 3px rgba(16,185,129,0.08);
+}
+.rv-recommend-btn.no-active {
+  background: rgba(220,38,38,0.1);
+  border-color: rgba(220,38,38,0.3);
+  color: #f87171;
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.07);
+}
+
+/* ============================================================
+   QUALITY TAGS
+   ============================================================ */
+.rv-tags-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rv-tag-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  color: #64748b;
+}
+.rv-tag-btn:hover { border-color: rgba(91,110,248,0.3); color: #a5b4fc; background: rgba(91,110,248,0.07); }
+.rv-tag-btn.tag-selected {
+  background: rgba(91,110,248,0.15);
+  border-color: rgba(91,110,248,0.4);
+  color: #c7d2fe;
+  box-shadow: 0 0 0 3px rgba(91,110,248,0.07);
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+.rv-input,
+.rv-textarea {
+  width: 100%;
+  padding: 13px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1.5px solid rgba(255,255,255,0.09);
+  border-radius: 13px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+  outline: none;
+  transition: all 0.2s ease;
+}
+.rv-input::placeholder,
+.rv-textarea::placeholder { color: #334155; }
+.rv-input:focus,
+.rv-textarea:focus {
+  border-color: rgba(91,110,248,0.5);
+  background: rgba(91,110,248,0.05);
+  box-shadow: 0 0 0 4px rgba(91,110,248,0.1);
+}
+.rv-textarea { resize: vertical; min-height: 130px; }
+
+.rv-char-count {
+  display: block;
+  text-align: right;
+  font-size: 0.72rem;
+  color: #334155;
+  margin-top: 5px;
+}
+
+/* ============================================================
+   ERROR
+   ============================================================ */
+.rv-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(220,38,38,0.08);
+  border: 1.5px solid rgba(220,38,38,0.2);
+  border-radius: 10px;
+  color: #f87171;
+  font-size: 0.83rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+
+/* ============================================================
+   SUBMIT BUTTON
+   ============================================================ */
+.rv-submit-btn {
+  width: 100%;
+  padding: 15px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #5b6ef8, #7c3aed);
+  border: none;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 8px 24px rgba(91,110,248,0.4);
+  transition: all 0.2s ease;
+  letter-spacing: 0.01em;
+}
+.rv-submit-btn:hover {
+  box-shadow: 0 12px 32px rgba(91,110,248,0.55);
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   SUCCESS STATE
+   ============================================================ */
+.rv-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.09);
+  border-radius: 24px;
+  padding: 48px 36px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 480px;
+  margin: auto;
+  margin-top: 60px;
+}
+
+.rv-success-card {
+  border-color: rgba(16,185,129,0.25);
+  background: rgba(16,185,129,0.04);
+}
+
+.rv-success-ring {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(16,185,129,0.1);
+  border: 3px solid rgba(16,185,129,0.25);
+  display: grid;
+  place-items: center;
+  color: #34d399;
+  animation: rvPop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes rvPop {
+  from { transform: scale(0.3); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.rv-card h2 { font-size: 1.6rem; font-weight: 900; color: #f1f5f9; }
+.rv-card p  { font-size: 0.88rem; color: #64748b; line-height: 1.6; max-width: 340px; }
+
+.rv-success-stars {
+  display: flex;
+  gap: 4px;
+}
+.rv-success-star { font-size: 1.6rem; color: #334155; }
+.rv-success-star.filled { color: #fbbf24; }
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media (max-width: 640px) {
+  .rv-page { padding: 20px 14px 48px; }
+  .rv-form-card { padding: 24px 18px; }
+  .rv-form-header h1 { font-size: 1.4rem; }
+  .rv-stars .rv-star svg { width: 26px; height: 26px; }
+}
