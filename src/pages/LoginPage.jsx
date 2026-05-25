@@ -1,402 +1,325 @@
-import React, { useState } from "react";
-import { FiCheckCircle } from "react-icons/fi";
-
+import React, { useState, useRef, useEffect } from "react";
+import { FiCheckCircle, FiLoader } from "react-icons/fi";
 import "../styles/LoginPage.css";
-import { getStoredUsers, getStoredProviders, setAuth } from "../utils/storage";
-
-import {
-  Link,
-  useNavigate,
-} from "react-router-dom";
+import { getStoredUsers, getStoredProviders, setAuth, saveStoredUsers } from "../utils/storage";
+import { Link, useNavigate } from "react-router-dom";
+import { googleSignIn, GOOGLE_CLIENT_ID } from "../utils/googleAuth";
 
 export default function LoginPage() {
 
-  // ================= NAVIGATION =================
-
   const navigate = useNavigate();
 
-  // ================= STATES =================
+  const [email,        setEmail]        = useState("");
+  const [password,     setPassword]     = useState("");
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError,   setGoogleError]   = useState("");
+  const googleBtnRef = useRef(null);
 
-  const [email, setEmail] = useState("");
+  const hour     = new Date().getHours();
+  const greeting = hour < 12 ? "Good Morning" : hour < 18 ? "Good Afternoon" : "Good Evening";
 
-  const [password, setPassword] =
-    useState("");
+  // ── Render the official Google button as a fallback visual ──
+  useEffect(() => {
+    if (!googleBtnRef.current) return;
+    if (GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") return;
+    if (!window.google?.accounts?.id) return;
 
-  // ================= GREETING =================
+    window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      auto_select: false,
+    });
 
-  const hour = new Date().getHours();
+    window.google.accounts.id.renderButton(googleBtnRef.current, {
+      theme:  "outline",
+      size:   "large",
+      width:  "100%",
+      text:   "continue_with",
+      shape:  "rectangular",
+    });
+  }, []);
 
-  let greeting = "Good Evening";
+  // ── Called when Google returns a credential (One-Tap or button) ──
+  const handleGoogleCredential = async (response) => {
+    setGoogleLoading(true);
+    setGoogleError("");
+    try {
+      // Decode the JWT to get user info
+      const base64Url = response.credential.split(".")[1];
+      const base64    = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      const payload   = JSON.parse(
+        decodeURIComponent(
+          atob(base64).split("").map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2)).join("")
+        )
+      );
 
-  if (hour < 12) {
+      const googleUser = {
+        name:    payload.name    || payload.email.split("@")[0],
+        email:   payload.email,
+        picture: payload.picture || null,
+      };
 
-    greeting = "Good Morning";
-
-  }
-
-  else if (hour < 18) {
-
-    greeting = "Good Afternoon";
-
-  }
-
-  // ================= LOGIN FUNCTION =================
-
-  const handleLogin = () => {
-
-    // EMPTY CHECK
-
-    if (!email || !password) {
-      alert("Please enter email and password");
-      return;
+      loginWithGoogleUser(googleUser);
+    } catch (e) {
+      setGoogleError("Failed to process Google sign-in. Please try again.");
+    } finally {
+      setGoogleLoading(false);
     }
+  };
 
-    // EMAIL VALIDATION
+  // ── Core: given Google user info, find or create account ──
+  const loginWithGoogleUser = (googleUser) => {
+    const { name, email: gEmail, picture } = googleUser;
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      alert("Please enter a valid email address");
-      return;
-    }
-
-    // ADMIN LOGIN
-
-    const adminEmail = "admin@connectpro.com";
-    const adminPassword = "admin123";
-
-    if (
-      email.toLowerCase() === adminEmail &&
-      password === adminPassword
-    ) {
-      setAuth({ role: "admin", email: adminEmail });
-
-      alert("Admin Login Successful!");
-      setEmail("");
-      setPassword("");
-      navigate("/admin");
-      return;
-    }
-
-    // ── CHECK PROVIDER APPLICATIONS (pending / rejected) ──────────
-    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
-    const pendingApp   = applications.find(
-      a => a.email.toLowerCase() === email.toLowerCase() && a.password === password
-    );
-
-    if (pendingApp) {
-      if (pendingApp.status === "pending") {
-        alert(
-          "⏳ Your provider application is under review.\n\n" +
-          "Our admin team will verify your documents within 24–48 hours.\n" +
-          "You'll be able to log in once your application is approved."
-        );
-        return;
-      }
-      if (pendingApp.status === "rejected") {
-        alert(
-          "❌ Your provider application was not approved.\n\n" +
-          (pendingApp.rejectionReason
-            ? `Reason: ${pendingApp.rejectionReason}\n\n`
-            : "") +
-          "Please contact support or reapply with updated documents."
-        );
-        return;
-      }
-    }
-
-    // GET USER DATA
-
-    const savedUsers = getStoredUsers();
-    const savedProviders = getStoredProviders();
-
-    const foundUser = savedUsers.find(
-      (user) => user.email.toLowerCase() === email.toLowerCase()
-    );
-    const foundProvider = savedProviders.find(
-      (provider) => provider.email.toLowerCase() === email.toLowerCase()
-    );
-
-    // ================= USER LOGIN =================
-
-    if (
-      foundUser &&
-      password === foundUser.password
-    ) {
-      setAuth({ role: "user", email: foundUser.email });
-
-      alert("User Login Successful!");
-      setEmail("");
-      setPassword("");
-      navigate("/user-home");
-      return;
-    }
-
-    // ================= PROVIDER LOGIN =================
-
-    if (
-      foundProvider &&
-      password === foundProvider.password
-    ) {
-      setAuth({ role: "provider", email: foundProvider.email });
-
-      alert("Provider Login Successful!");
-      setEmail("");
-      setPassword("");
+    // Check if existing provider
+    const providers = getStoredProviders();
+    const foundProvider = providers.find(p => p.email.toLowerCase() === gEmail.toLowerCase());
+    if (foundProvider) {
+      setAuth({ role: "provider", email: foundProvider.email, picture });
       navigate("/provider-home");
       return;
     }
 
-    // ================= INVALID LOGIN =================
+    // Check if pending/rejected application
+    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
+    const pendingApp   = applications.find(a => a.email.toLowerCase() === gEmail.toLowerCase());
+    if (pendingApp?.status === "pending") {
+      setGoogleError("⏳ Your provider application is still under review. Please wait for admin approval.");
+      return;
+    }
+    if (pendingApp?.status === "rejected") {
+      setGoogleError("❌ Your provider application was not approved. Please contact support.");
+      return;
+    }
 
-    alert(
-      "Invalid email or password. Please check your credentials or create a new account."
-    );
+    // Check if existing user
+    const users = getStoredUsers();
+    const foundUser = users.find(u => u.email.toLowerCase() === gEmail.toLowerCase());
+    if (foundUser) {
+      setAuth({ role: "user", email: foundUser.email, picture });
+      navigate("/user-home");
+      return;
+    }
+
+    // New user — auto-register via Google
+    const newUser = {
+      name,
+      email:     gEmail,
+      password:  "", // no password for Google users
+      role:      "user",
+      picture,
+      googleAuth: true,
+      createdAt:  new Date().toISOString(),
+    };
+    saveStoredUsers([...users, newUser]);
+    setAuth({ role: "user", email: gEmail, picture });
+    navigate("/user-home");
   };
 
-  return (
+  // ── Click handler for our custom Google button ──
+  const handleGoogleClick = async () => {
+    setGoogleError("");
 
+    if (GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE") {
+      setGoogleError(
+        "🔧 Google Sign-In needs setup. Add your Client ID to the .env file.\n" +
+        "See SETUP GUIDE below."
+      );
+      return;
+    }
+
+    setGoogleLoading(true);
+    try {
+      const googleUser = await googleSignIn();
+      loginWithGoogleUser(googleUser);
+    } catch (err) {
+      if (err.message === "SETUP_REQUIRED") {
+        setGoogleError("🔧 Google Client ID not configured. See the setup guide below.");
+      } else {
+        setGoogleError(err.message || "Google sign-in failed. Please try again.");
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  // ── Regular email/password login ──
+  const handleLogin = () => {
+    if (!email || !password) { alert("Please enter email and password"); return; }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) { alert("Please enter a valid email address"); return; }
+
+    // Admin
+    if (email.toLowerCase() === "admin@connectpro.com" && password === "admin123") {
+      setAuth({ role: "admin", email: "admin@connectpro.com" });
+      navigate("/admin"); return;
+    }
+
+    // Pending applications
+    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
+    const pendingApp   = applications.find(a => a.email.toLowerCase() === email.toLowerCase() && a.password === password);
+    if (pendingApp?.status === "pending") {
+      alert("⏳ Your provider application is under review.\n\nOur admin team will verify your documents within 24–48 hours.\nYou'll be able to log in once approved.");
+      return;
+    }
+    if (pendingApp?.status === "rejected") {
+      alert("❌ Your provider application was not approved.\n\n" + (pendingApp.rejectionReason ? `Reason: ${pendingApp.rejectionReason}\n\n` : "") + "Please contact support or reapply.");
+      return;
+    }
+
+    const savedUsers     = getStoredUsers();
+    const savedProviders = getStoredProviders();
+    const foundUser      = savedUsers.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const foundProvider  = savedProviders.find(p => p.email.toLowerCase() === email.toLowerCase());
+
+    if (foundUser && password === foundUser.password) {
+      setAuth({ role: "user", email: foundUser.email });
+      navigate("/user-home"); return;
+    }
+    if (foundProvider && password === foundProvider.password) {
+      setAuth({ role: "provider", email: foundProvider.email });
+      navigate("/provider-home"); return;
+    }
+
+    alert("Invalid email or password. Please check your credentials or create a new account.");
+  };
+
+  const setupRequired = GOOGLE_CLIENT_ID === "YOUR_GOOGLE_CLIENT_ID_HERE";
+
+  return (
     <div className="login-page">
 
-      {/* ================= LEFT SIDE ================= */}
-
+      {/* ===== LEFT SIDE ===== */}
       <div className="login-left">
-
-        {/* BACK BUTTON */}
-
-        <Link
-          to="/"
-          className="top-back-btn"
-        >
-          ← Back
-        </Link>
-
-        {/* CONTENT BOX */}
+        <Link to="/" className="top-back-btn">← Back</Link>
 
         <div className="left-container">
-
-          {/* GREETING */}
-
-          <div className="welcome-tag">
-
-            {greeting}
-
-          </div>
-
-          {/* HEADING */}
-
-          <h1>
-
-            Welcome Back
-
-          </h1>
-
-          <h3>
-
-            Continue Your Learning Journey
-
-          </h3>
-
-          {/* DESCRIPTION */}
-
+          <div className="welcome-tag">{greeting}</div>
+          <h1>Welcome Back</h1>
+          <h3>Continue Your Learning Journey</h3>
           <p>
-
-            Connect with mentors,
-            attend live mentorship sessions,
-            prepare for interviews,
-            and accelerate your
-            professional growth.
-
+            Connect with mentors, attend live mentorship sessions,
+            prepare for interviews, and accelerate your professional growth.
           </p>
-
-          {/* FEATURES */}
 
           <div className="feature-list">
-
-            <div className="feature-item">
-
-              <FiCheckCircle size={20} />
-
-              <p>
-                1:1 Mentorship Sessions
-              </p>
-
-            </div>
-
-            <div className="feature-item">
-
-              <FiCheckCircle size={20} />
-
-              <p>
-                Mock Interview Preparation
-              </p>
-
-            </div>
-
-            <div className="feature-item">
-
-              <FiCheckCircle size={20} />
-
-              <p>
-                Career Guidance & Support
-              </p>
-
-            </div>
-
-            <div className="feature-item">
-
-              <FiCheckCircle size={20} />
-
-              <p>
-                Trusted by 10,000+ Learners
-              </p>
-
-            </div>
-
+            <div className="feature-item"><FiCheckCircle size={20} /><p>1:1 Mentorship Sessions</p></div>
+            <div className="feature-item"><FiCheckCircle size={20} /><p>Mock Interview Preparation</p></div>
+            <div className="feature-item"><FiCheckCircle size={20} /><p>Career Guidance &amp; Support</p></div>
+            <div className="feature-item"><FiCheckCircle size={20} /><p>Trusted by 10,000+ Learners</p></div>
           </div>
-
-          {/* TAGS */}
 
           <div className="tags">
-
-            <span>Career</span>
-
-            <span>Interview</span>
-
-            <span>Resume</span>
-
-            <span>Mentorship</span>
-
+            <span>Career</span><span>Interview</span><span>Resume</span><span>Mentorship</span>
           </div>
-
         </div>
-
       </div>
 
-      {/* ================= RIGHT SIDE ================= */}
-
+      {/* ===== RIGHT SIDE ===== */}
       <div className="login-right">
-
         <div className="login-card">
 
-          {/* TITLE */}
+          <h2>Sign In</h2>
+          <p className="subtitle">Continue your mentorship journey with us.</p>
 
-          <h2>
-            Sign In
-          </h2>
+          {/* GOOGLE SIGN-IN */}
+          <button
+            className={`google-btn ${googleLoading ? "google-btn-loading" : ""}`}
+            onClick={handleGoogleClick}
+            disabled={googleLoading}
+            id="google-signin-btn"
+          >
+            {googleLoading ? (
+              <>
+                <span className="google-spinner" />
+                Signing in with Google...
+              </>
+            ) : (
+              <>
+                <svg width="20" height="20" viewBox="0 0 48 48" style={{ flexShrink: 0 }}>
+                  <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.7 0 6.8 5.4 2.9 13.3l7.9 6.1C12.7 13 17.9 9.5 24 9.5z"/>
+                  <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17z"/>
+                  <path fill="#FBBC05" d="M10.8 28.6A14.5 14.5 0 0 1 9.5 24c0-1.6.3-3.2.7-4.6L2.3 13.3A23.9 23.9 0 0 0 0 24c0 3.9.9 7.5 2.5 10.7l8.3-6.1z"/>
+                  <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.5-5.8c-2 1.4-4.7 2.2-7.7 2.2-6.1 0-11.3-4.1-13.2-9.6l-8.3 6.1C6.8 42.6 14.7 48 24 48z"/>
+                </svg>
+                Continue with Google
+              </>
+            )}
+          </button>
 
-          <p className="subtitle">
+          {/* Google error / setup notice */}
+          {googleError && (
+            <div className="google-error-box">
+              <span>{googleError}</span>
+            </div>
+          )}
 
-            Continue your mentorship
-            journey with us.
+          {/* Show setup guide if client ID not configured */}
+          {setupRequired && (
+            <div className="google-setup-guide">
+              <p className="setup-title">🔧 Quick Setup — Google Sign-In</p>
+              <ol>
+                <li>Go to <a href="https://console.cloud.google.com/" target="_blank" rel="noreferrer">console.cloud.google.com</a></li>
+                <li>Create a project → <strong>APIs & Services → Credentials</strong></li>
+                <li>Click <strong>Create Credentials → OAuth 2.0 Client ID</strong></li>
+                <li>Type: <strong>Web application</strong></li>
+                <li>Authorised origin: <code>http://localhost:5173</code></li>
+                <li>Copy the <strong>Client ID</strong></li>
+                <li>Create <code>.env</code> in <code>my-react-app/</code> and add:<br />
+                  <code>VITE_GOOGLE_CLIENT_ID=your_client_id_here</code>
+                </li>
+                <li>Restart the dev server: <code>npm run dev</code></li>
+              </ol>
+            </div>
+          )}
 
-          </p>
+          {/* DIVIDER */}
+          <div className="divider"><span>OR sign in with email</span></div>
 
           {/* EMAIL */}
-
           <div className="input-group">
-
-            <label>
-              Email Address
-            </label>
-
+            <label>Email Address</label>
             <input
               type="email"
               placeholder="Enter your email"
               value={email}
-              onChange={(e) =>
-                setEmail(e.target.value)
-              }
+              onChange={e => setEmail(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
             />
-
           </div>
 
           {/* PASSWORD */}
-
           <div className="input-group">
-
-            <label>
-              Password
-            </label>
-
+            <label>Password</label>
             <input
               type="password"
               placeholder="Enter your password"
               value={password}
-              onChange={(e) =>
-                setPassword(e.target.value)
-              }
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleLogin()}
             />
-
           </div>
 
           {/* OPTIONS */}
-
           <div className="options">
-
             <label className="remember">
-
-              <input type="checkbox" />
-
-              <span>
-                Remember me
-              </span>
-
+              <input type="checkbox" /><span>Remember me</span>
             </label>
-
-            <a
-              href="/"
-              className="forgot-link"
-            >
-              Forgot Password?
-            </a>
-
+            <a href="/" className="forgot-link">Forgot Password?</a>
           </div>
 
           {/* SIGN IN BUTTON */}
-
-          <button
-            className="signin-btn"
-            onClick={handleLogin}
-          >
-            Sign In
-          </button>
-
-          {/* DIVIDER */}
-
-          <div className="divider">
-
-            <span>OR</span>
-
-          </div>
-
-          {/* GOOGLE */}
-
-          <button className="google-btn">
-
-            Continue with Google
-
-          </button>
+          <button className="signin-btn" onClick={handleLogin}>Sign In</button>
 
           {/* BOTTOM */}
-
           <p className="bottom-text">
-
-            Don’t have an account?{" "}
-
-            <Link to="/register">
-
-              Create Account
-
-            </Link>
-
+            Don't have an account?{" "}
+            <Link to="/register">Create Account</Link>
           </p>
 
         </div>
-
       </div>
-
     </div>
-
   );
 }

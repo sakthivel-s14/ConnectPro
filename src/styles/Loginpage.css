@@ -657,6 +657,93 @@
   box-shadow: 0 6px 18px rgba(15,23,42,0.1);
 }
 
+.google-btn:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.google-btn-loading {
+  background: #f8fafc;
+  color: #64748b;
+}
+
+/* Spinner inside Google button */
+.google-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #e2e8f0;
+  border-top-color: #5b6ef8;
+  border-radius: 50%;
+  animation: googleSpin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes googleSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Error box below Google button */
+.google-error-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff1f2;
+  border: 1.5px solid #fecaca;
+  border-radius: 11px;
+  color: #b91c1c;
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin-bottom: 14px;
+  line-height: 1.5;
+  white-space: pre-line;
+}
+
+/* Setup guide panel */
+.google-setup-guide {
+  background: #f8faff;
+  border: 1.5px solid #c7d2fe;
+  border-radius: 14px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.setup-title {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #3730a3;
+  margin-bottom: 10px;
+}
+
+.google-setup-guide ol {
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.google-setup-guide li {
+  font-size: 0.78rem;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.google-setup-guide a {
+  color: #5b6ef8;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.google-setup-guide code {
+  background: #e0e7ff;
+  color: #3730a3;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-family: 'Courier New', monospace;
+}
+
 /* BOTTOM TEXT */
 .bottom-text {
   text-align: center;
