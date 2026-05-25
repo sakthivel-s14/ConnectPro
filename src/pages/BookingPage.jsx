@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import "../styles/BookingPage.css";
-import { FiArrowLeft, FiClock, FiCalendar, FiCheck, FiStar } from "react-icons/fi";
+import { FiArrowLeft, FiClock, FiCalendar, FiCheck, FiStar, FiVideo, FiExternalLink } from "react-icons/fi";
 import { getAuth, getCurrentProfile, getProviderAvailability } from "../utils/storage";
+import { createCalendarEvent } from "../utils/googleApi";
 
 export default function BookingPage() {
   const navigate = useNavigate();
@@ -20,6 +21,8 @@ export default function BookingPage() {
   const [description, setDescription] = useState("");
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [manualMode, setManualMode] = useState(false);
+  const [meetLink, setMeetLink] = useState(null);
+  const [calendarCreating, setCalendarCreating] = useState(false);
 
   const availability = useMemo(() => {
     if (!selectedMentor) return [];
@@ -43,7 +46,7 @@ export default function BookingPage() {
     return (parseInt(duration) / 60) * selectedMentor.hourlyRate;
   };
 
-  const handleConfirmBooking = () => {
+  const handleConfirmBooking = async () => {
     if (selectedDate && selectedTime && duration && description) {
       const booking = {
         id: Date.now(),
@@ -61,15 +64,38 @@ export default function BookingPage() {
         providerName: selectedMentor.name,
       };
 
-      // Save booking to localStorage
+      // ── Save booking to localStorage (unchanged) ──────────────
       const existingBookings = JSON.parse(localStorage.getItem("userBookings") || "[]");
       existingBookings.push(booking);
       localStorage.setItem("userBookings", JSON.stringify(existingBookings));
 
+      // ── Create Google Calendar event with Meet link ───────────
+      // This runs after localStorage save so booking is always stored
+      // even if Google API is not yet configured or auth fails.
+      setCalendarCreating(true);
+      try {
+        const googleResult = await createCalendarEvent(booking);
+        if (googleResult?.meetLink) {
+          setMeetLink(googleResult.meetLink);
+          // Update the stored booking with the meet link and calendar event ID
+          const updatedBookings = JSON.parse(localStorage.getItem("userBookings") || "[]");
+          const idx = updatedBookings.findIndex((b) => b.id === booking.id);
+          if (idx !== -1) {
+            updatedBookings[idx].meetLink       = googleResult.meetLink;
+            updatedBookings[idx].calendarEventId = googleResult.calendarEventId;
+            localStorage.setItem("userBookings", JSON.stringify(updatedBookings));
+          }
+        }
+      } catch (err) {
+        console.warn("[BookingPage] Calendar event creation failed:", err);
+      } finally {
+        setCalendarCreating(false);
+      }
+
       setBookingConfirmed(true);
       setTimeout(() => {
         navigate("/user-home");
-      }, 3000);
+      }, 5000);
     }
   };
 
@@ -102,7 +128,38 @@ export default function BookingPage() {
             <p><strong>Duration:</strong> {duration} minutes</p>
             <p><strong>Total Price:</strong> ${getTotalPrice().toFixed(2)}</p>
           </div>
-          <p className="redirecting">Redirecting to home...</p>
+
+          {/* ── Google Meet Link ──────────────────────────────── */}
+          {calendarCreating && (
+            <div className="meet-link-creating">
+              <div className="meet-spinner"></div>
+              <p>Creating your Google Meet room...</p>
+            </div>
+          )}
+          {meetLink && !calendarCreating && (
+            <div className="meet-link-box">
+              <FiVideo size={22} className="meet-icon" />
+              <div>
+                <p className="meet-link-label">Your Google Meet Room is ready!</p>
+                <a
+                  href={meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="meet-link-anchor"
+                >
+                  {meetLink} <FiExternalLink size={14} />
+                </a>
+                <p className="meet-link-hint">Share this link with your mentor to join the meeting.</p>
+              </div>
+            </div>
+          )}
+          {!meetLink && !calendarCreating && (
+            <div className="meet-link-fallback">
+              <p>💡 Connect your Google account to auto-generate a Meet link next time.</p>
+            </div>
+          )}
+
+          <p className="redirecting">Redirecting to home in a moment...</p>
         </div>
       </div>
     );

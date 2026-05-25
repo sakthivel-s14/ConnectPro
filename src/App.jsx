@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { initGoogleApi } from "./utils/googleApi";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 import LandingPage from "./pages/LandingPage";
@@ -35,11 +36,19 @@ function App() {
 
   useEffect(() => {
 
+    // ── Loader timer ──────────────────────────────────────────
     const timer = setTimeout(() => {
 
       setLoading(false);
 
     }, 2500);
+
+    // ── Google Calendar & Meet API initialization ─────────────
+    // Runs in the background at startup. If credentials are not
+    // yet configured, this will log a warning but NOT break the app.
+    initGoogleApi().catch((err) =>
+      console.warn("[App] Google API init failed (check credentials):", err)
+    );
 
     return () => clearTimeout(timer);
 

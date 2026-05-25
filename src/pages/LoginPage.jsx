@@ -78,6 +78,33 @@ export default function LoginPage() {
       return;
     }
 
+    // ── CHECK PROVIDER APPLICATIONS (pending / rejected) ──────────
+    const applications = JSON.parse(localStorage.getItem("connectpro_provider_applications") || "[]");
+    const pendingApp   = applications.find(
+      a => a.email.toLowerCase() === email.toLowerCase() && a.password === password
+    );
+
+    if (pendingApp) {
+      if (pendingApp.status === "pending") {
+        alert(
+          "⏳ Your provider application is under review.\n\n" +
+          "Our admin team will verify your documents within 24–48 hours.\n" +
+          "You'll be able to log in once your application is approved."
+        );
+        return;
+      }
+      if (pendingApp.status === "rejected") {
+        alert(
+          "❌ Your provider application was not approved.\n\n" +
+          (pendingApp.rejectionReason
+            ? `Reason: ${pendingApp.rejectionReason}\n\n`
+            : "") +
+          "Please contact support or reapply with updated documents."
+        );
+        return;
+      }
+    }
+
     // GET USER DATA
 
     const savedUsers = getStoredUsers();

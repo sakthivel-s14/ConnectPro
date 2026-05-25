@@ -1,9 +1,45 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { FiTarget, FiVideo, FiBriefcase, FiTrendingUp, FiFileText, FiMail, FiPhone, FiMapPin, FiStar, FiZap } from "react-icons/fi";
+import { FiTarget, FiVideo, FiBriefcase, FiTrendingUp, FiFileText, FiMail, FiPhone, FiMapPin, FiStar, FiZap, FiCheck } from "react-icons/fi";
 import "../styles/App.css";
 
 export default function LandingPage() {
+
+  // ── Contact form state ─────────────────────────────────────
+  const [contactName,    setContactName]    = useState("");
+  const [contactEmail,   setContactEmail]   = useState("");
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactSent,    setContactSent]    = useState(false);
+  const [contactError,   setContactError]   = useState("");
+
+  const handleSendMessage = () => {
+    // Basic validation
+    if (!contactName.trim())    { setContactError("Please enter your name.");    return; }
+    if (!contactEmail.trim())   { setContactError("Please enter your email.");   return; }
+    if (!contactMessage.trim()) { setContactError("Please write your message."); return; }
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail.trim());
+    if (!emailOk) { setContactError("Please enter a valid email address."); return; }
+
+    // Save to localStorage so admin can view it
+    const newMsg = {
+      id:        Date.now(),
+      name:      contactName.trim(),
+      email:     contactEmail.trim(),
+      message:   contactMessage.trim(),
+      sentAt:    new Date().toISOString(),
+      read:      false,
+    };
+    const existing = JSON.parse(localStorage.getItem("connectpro_contact_messages") || "[]");
+    existing.push(newMsg);
+    localStorage.setItem("connectpro_contact_messages", JSON.stringify(existing));
+
+    setContactSent(true);
+    setContactError("");
+    setContactName("");
+    setContactEmail("");
+    setContactMessage("");
+  };
+
 
   const services = [
     {
@@ -281,17 +317,55 @@ export default function LandingPage() {
 
           <div className="contact-info">
             <p><FiMail size={17} /> support@connectpro.com</p>
-            <p><FiPhone size={17} /> +91 98765 43210</p>
+            <p><FiPhone size={17} /> +91 78712 16558</p>
             <p><FiMapPin size={17} /> Chennai, Tamil Nadu</p>
           </div>
 
         </div>
 
         <div className="contact-right">
-          <input type="text" placeholder="Enter your name" />
-          <input type="email" placeholder="Enter your email" />
-          <textarea rows="5" placeholder="Write your message"></textarea>
-          <button>Send Message</button>
+          {contactSent ? (
+            /* ── Success state ── */
+            <div className="contact-success">
+              <div className="contact-success-icon">
+                <FiCheck size={36} />
+              </div>
+              <h3>Message Sent!</h3>
+              <p>Thank you for reaching out. We'll get back to you shortly.</p>
+              <button
+                className="contact-send-again-btn"
+                onClick={() => setContactSent(false)}
+              >
+                Send Another Message
+              </button>
+            </div>
+          ) : (
+            /* ── Form ── */
+            <>
+              <input
+                type="text"
+                placeholder="Enter your name"
+                value={contactName}
+                onChange={e => { setContactName(e.target.value); setContactError(""); }}
+              />
+              <input
+                type="email"
+                placeholder="Enter your email"
+                value={contactEmail}
+                onChange={e => { setContactEmail(e.target.value); setContactError(""); }}
+              />
+              <textarea
+                rows="5"
+                placeholder="Write your message"
+                value={contactMessage}
+                onChange={e => { setContactMessage(e.target.value); setContactError(""); }}
+              />
+              {contactError && (
+                <p className="contact-error">{contactError}</p>
+              )}
+              <button onClick={handleSendMessage}>Send Message</button>
+            </>
+          )}
         </div>
 
       </section>

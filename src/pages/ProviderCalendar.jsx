@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import "../styles/ProviderCalendar.css";
 import { FiArrowLeft, FiPlus, FiTrash2 } from "react-icons/fi";
 import { getCurrentProfile, getProviderAvailability, saveProviderAvailability } from "../utils/storage";
+import { addAvailabilityToCalendar, removeAvailabilityFromCalendar } from "../utils/googleApi";
 
 export default function ProviderCalendar() {
   const navigate = useNavigate();
@@ -21,14 +22,26 @@ export default function ProviderCalendar() {
     "04:00 PM", "04:30 PM", "05:00 PM",
   ];
 
-  const handleAddSlot = () => {
+  const handleAddSlot = async () => {
     if (!selectedDate || !selectedTime) return;
     const exists = availability.some(
       (slot) => slot.date === selectedDate && slot.time === selectedTime
     );
     if (exists) return;
 
-    const updated = [...availability, { date: selectedDate, time: selectedTime }].sort((a, b) => {
+    const newSlot = { date: selectedDate, time: selectedTime };
+
+    // ── Sync to Google Calendar ───────────────────────────
+    // Stores the Google Calendar event ID on the slot so we can
+    // delete it later. Gracefully falls back if auth fails.
+    try {
+      const googleEventId = await addAvailabilityToCalendar(newSlot, provider?.name);
+      if (googleEventId) newSlot.googleEventId = googleEventId;
+    } catch (err) {
+      console.warn("[ProviderCalendar] Could not add slot to Google Calendar:", err);
+    }
+
+    const updated = [...availability, newSlot].sort((a, b) => {
       if (a.date === b.date) return a.time.localeCompare(b.time);
       return a.date.localeCompare(b.date);
     });
@@ -37,7 +50,16 @@ export default function ProviderCalendar() {
     setSelectedTime("");
   };
 
-  const handleRemoveSlot = (removeSlot) => {
+  const handleRemoveSlot = async (removeSlot) => {
+    // ── Remove from Google Calendar if we have a calendar event ID ──
+    if (removeSlot.googleEventId) {
+      try {
+        await removeAvailabilityFromCalendar(removeSlot.googleEventId);
+      } catch (err) {
+        console.warn("[ProviderCalendar] Could not remove slot from Google Calendar:", err);
+      }
+    }
+
     const updated = availability.filter(
       (slot) => !(slot.date === removeSlot.date && slot.time === removeSlot.time)
     );

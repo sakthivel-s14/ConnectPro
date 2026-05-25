@@ -1035,3 +1035,48 @@ select:focus {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* ============================================================
+   CONTACT FORM — SUCCESS STATE & ERROR
+   ============================================================ */
+
+.contact-success {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 16px; text-align: center;
+  padding: 32px 24px;
+  background: #f0fdf4; border: 1.5px solid #86efac;
+  border-radius: 20px; animation: csFadeIn 0.4s ease;
+}
+@keyframes csFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.contact-success-icon {
+  width: 72px; height: 72px; border-radius: 50%;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  display: grid; place-items: center;
+  box-shadow: 0 8px 24px rgba(34,197,94,0.35);
+}
+.contact-success-icon svg { color: #fff; }
+
+.contact-success h3 {
+  font-size: 1.4rem; font-weight: 800; color: #15803d;
+}
+.contact-success p {
+  font-size: 0.9rem; color: #166534; line-height: 1.6; max-width: 300px;
+}
+.contact-send-again-btn {
+  padding: 10px 22px; border-radius: 12px;
+  background: #22c55e; color: #fff; border: none;
+  font-weight: 700; font-size: 0.86rem; cursor: pointer;
+  transition: all 0.2s ease;
+}
+.contact-send-again-btn:hover { background: #16a34a; transform: translateY(-1px); }
+
+.contact-error {
+  color: #dc2626; font-size: 0.82rem; font-weight: 600;
+  padding: 8px 12px; background: #fef2f2;
+  border: 1px solid #fecaca; border-radius: 8px;
+  margin-top: -4px; text-align: left; width: 100%;
+}
